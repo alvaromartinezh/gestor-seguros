@@ -135,7 +135,7 @@ class AppStore {
 
   async inicializar(): Promise<void> {
     const [polizas, perfil] = await Promise.all([
-      this.servicioPolizas.inicializar({ conDemo: true }),
+      this.servicioPolizas.inicializar({ conDemo: false }),
       this.servicioPerfil.inicializar(),
     ]);
     this.polizas = polizas;
