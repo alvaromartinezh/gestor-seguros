@@ -1,36 +1,19 @@
 <script lang="ts">
   import { store } from '../estado/store.svelte';
-  import { COMPANIAS_SUGERIDAS, DIAS_AVISO_DEFECTO, nuevoPerfilVacio, type DatosPerfil, type Errores, type Perfil } from '../../dominio';
+  import { DIAS_AVISO_DEFECTO, nuevoPerfilVacio, type DatosPerfil, type Errores, type Perfil } from '../../dominio';
+  import SelectorCompanias from '../componentes/SelectorCompanias.svelte';
 
   let form = $state<DatosPerfil>(store.perfil ? { ...store.perfil } : nuevoPerfilVacio(DIAS_AVISO_DEFECTO));
   let errores = $state<Errores<Perfil>>({});
   let guardando = $state(false);
   let guardado = $state(false);
-  let nuevaCompania = $state('');
+  let mostrarSelectorCompanias = $state(false);
 
   let mensajeBackup = $state<{ texto: string; error: boolean } | null>(null);
   let procesandoBackup = $state(false);
 
-  const chipsCompanias = $derived.by(() => {
-    const propias = form.companias ?? [];
-    const todas = [...new Set([...COMPANIAS_SUGERIDAS, ...propias])];
-    return todas.map((nombre) => ({ nombre, activa: propias.includes(nombre) }));
-  });
-
-  function toggleCompania(nombre: string) {
-    const propias = form.companias ?? [];
-    form = {
-      ...form,
-      companias: propias.includes(nombre) ? propias.filter((c) => c !== nombre) : [...propias, nombre],
-    };
-  }
-
-  function anadirCompania() {
-    const nombre = nuevaCompania.trim();
-    if (!nombre) return;
-    const propias = form.companias ?? [];
-    if (!propias.includes(nombre)) form = { ...form, companias: [...propias, nombre] };
-    nuevaCompania = '';
+  function quitarCompania(nombre: string) {
+    form = { ...form, companias: (form.companias ?? []).filter((c) => c !== nombre) };
   }
 
   function cambiarFoto(e: Event) {
@@ -134,34 +117,25 @@
 
     <section style="background:var(--color-superficie); border:1px solid var(--color-borde); border-radius:var(--radio-tarjeta); padding:20px; margin-bottom:14px;">
       <h2 style="margin:0 0 4px; font-family:var(--fuente-titulares); font-size:19px; font-weight:400;">Compañías con las que trabajas *</h2>
-      <p style="margin:0 0 14px; font-size:12.5px; color:var(--color-texto-tenue);">Toca para activar o desactivar. Las desactivadas dejan de aparecer al crear pólizas nuevas.</p>
-      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
-        {#each chipsCompanias as ch (ch.nombre)}
+      <p style="margin:0 0 14px; font-size:12.5px; color:var(--color-texto-tenue);">Toca una compañía para quitarla de la lista.</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        {#each form.companias ?? [] as c (c)}
           <button
             type="button"
-            onclick={() => toggleCompania(ch.nombre)}
-            class="chip-compania"
-            class:activa={ch.activa}
-            style="border-radius:var(--radio-pill); padding:8px 15px; font-size:13px; font-weight:600; cursor:pointer;"
+            onclick={() => quitarCompania(c)}
+            class="chip-quitar"
+            style="border-radius:var(--radio-pill); padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px;"
           >
-            {ch.nombre}
+            {c} <span aria-hidden="true">×</span>
           </button>
         {/each}
-      </div>
-      <div style="display:flex; gap:8px;">
-        <input
-          value={nuevaCompania}
-          oninput={(e) => (nuevaCompania = e.currentTarget.value)}
-          placeholder="Añadir otra compañía…"
-          style="flex:1; border:1px solid var(--color-borde-input); border-radius:var(--radio-input); padding:10px 14px; font-size:14px; background:var(--color-superficie);"
-        />
         <button
           type="button"
-          onclick={anadirCompania}
+          onclick={() => (mostrarSelectorCompanias = true)}
           class="boton-anadir"
-          style="border:1px solid var(--color-acento); background:var(--color-superficie); color:var(--color-acento); border-radius:var(--radio-pill); padding:10px 18px; font-size:13.5px; font-weight:600; cursor:pointer; min-height:var(--altura-tactil-min);"
+          style="border:1px solid var(--color-acento); background:var(--color-superficie); color:var(--color-acento); border-radius:var(--radio-pill); padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;"
         >
-          Añadir
+          + Añadir
         </button>
       </div>
       {#if errores.companias}<div style="font-size:12px; color:var(--color-vencido); margin-top:8px;">{errores.companias}</div>{/if}
@@ -232,6 +206,37 @@
   </section>
 </div>
 
+{#if mostrarSelectorCompanias}
+  <div
+    role="presentation"
+    style="position:fixed; inset:0; background:rgba(35,28,18,0.45); z-index:55; display:flex; align-items:center; justify-content:center; padding:16px; animation:fadeIn 0.2s ease;"
+    onclick={(e) => e.target === e.currentTarget && (mostrarSelectorCompanias = false)}
+  >
+    <div style="background:var(--color-superficie); border-radius:var(--radio-modal); width:min(480px, 100%); padding:24px; box-shadow:0 20px 50px rgba(35,25,10,0.3);">
+      <div style="display:flex; align-items:center; margin-bottom:14px;">
+        <h2 style="margin:0; font-family:var(--fuente-titulares); font-size:22px; font-weight:400;">Añadir compañías</h2>
+        <button
+          onclick={() => (mostrarSelectorCompanias = false)}
+          class="cerrar"
+          style="margin-left:auto; background:none; border:none; font-size:22px; color:var(--color-texto-tenue); cursor:pointer; padding:4px 8px;"
+        >
+          ×
+        </button>
+      </div>
+      <SelectorCompanias
+        seleccionadas={form.companias ?? []}
+        onCambiar={(nuevas) => (form = { ...form, companias: nuevas })}
+      />
+      <button
+        onclick={() => (mostrarSelectorCompanias = false)}
+        style="margin-top:16px; border:none; background:var(--color-tinta); color:var(--color-texto-invertido); border-radius:var(--radio-pill); padding:10px 22px; font-size:13.5px; font-weight:600; cursor:pointer; min-height:var(--altura-tactil-min);"
+      >
+        Hecho
+      </button>
+    </div>
+  </div>
+{/if}
+
 <style>
   .boton-foto:hover,
   .boton-anadir:hover,
@@ -241,14 +246,16 @@
   .boton-quitar-foto:hover {
     background: var(--color-vencido-bg);
   }
-  .chip-compania {
-    background: var(--color-superficie);
-    border: 1px solid var(--color-borde-input);
-    color: var(--color-texto-chip);
-  }
-  .chip-compania.activa {
+  .chip-quitar {
     background: var(--color-tinta);
-    border-color: var(--color-tinta);
+    border: 1px solid var(--color-tinta);
     color: var(--color-texto-invertido);
+  }
+  .chip-quitar:hover {
+    background: var(--color-vencido);
+    border-color: var(--color-vencido);
+  }
+  .cerrar:hover {
+    color: var(--color-texto);
   }
 </style>

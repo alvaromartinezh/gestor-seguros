@@ -1,12 +1,12 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import { store } from './estado/store.svelte';
-  import { COMPANIAS_SUGERIDAS, type Errores, type Perfil } from '../dominio';
+  import { type Errores, type Perfil } from '../dominio';
+  import SelectorCompanias from './componentes/SelectorCompanias.svelte';
 
   let paso = $state(0);
   let nombre = $state('');
   let companias = $state<string[]>([]);
-  let nuevaCompania = $state('');
   let errores = $state<Errores<Perfil>>({});
   let enviando = $state(false);
 
@@ -17,24 +17,8 @@
   const nombreValido = $derived(nombre.trim().length >= 3);
   const companiasValidas = $derived(companias.length > 0);
 
-  const chipsCompanias = $derived.by(() => {
-    const todas = [...new Set([...COMPANIAS_SUGERIDAS, ...companias])];
-    return todas.map((c) => ({ nombre: c, activa: companias.includes(c) }));
-  });
-
   function avanzar() {
     paso += 1;
-  }
-
-  function toggleCompania(c: string) {
-    companias = companias.includes(c) ? companias.filter((x) => x !== c) : [...companias, c];
-  }
-
-  function anadirCompania() {
-    const c = nuevaCompania.trim();
-    if (!c) return;
-    if (!companias.includes(c)) companias = [...companias, c];
-    nuevaCompania = '';
   }
 
   async function terminar() {
@@ -116,34 +100,7 @@
       </h1>
       <p style="margin:0 0 22px; font-size:13px; color:var(--color-texto-tenue);">Elige las que quieras, puedes cambiarlo luego en tu perfil.</p>
 
-      <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:14px;">
-        {#each chipsCompanias as ch (ch.nombre)}
-          <button
-            onclick={() => toggleCompania(ch.nombre)}
-            class="chip-compania"
-            class:activa={ch.activa}
-            style="border-radius:var(--radio-pill); padding:8px 15px; font-size:13px; font-weight:600; cursor:pointer;"
-          >
-            {ch.nombre}
-          </button>
-        {/each}
-      </div>
-
-      <div style="display:flex; gap:8px;">
-        <input
-          value={nuevaCompania}
-          oninput={(e) => (nuevaCompania = e.currentTarget.value)}
-          onkeydown={(e) => e.key === 'Enter' && (e.preventDefault(), anadirCompania())}
-          placeholder="Añadir otra compañía…"
-          style="flex:1; border:1px solid var(--color-borde-input); border-radius:var(--radio-input); padding:10px 14px; font-size:14px; background:var(--color-superficie);"
-        />
-        <button
-          onclick={anadirCompania}
-          style="border:1px solid var(--color-acento); background:var(--color-superficie); color:var(--color-acento); border-radius:var(--radio-pill); padding:10px 18px; font-size:13.5px; font-weight:600; cursor:pointer;"
-        >
-          Añadir
-        </button>
-      </div>
+      <SelectorCompanias seleccionadas={companias} onCambiar={(nuevas) => (companias = nuevas)} />
       {#if errores.companias}<p style="color:var(--color-vencido); font-size:12.5px; margin:10px 0 0;">{errores.companias}</p>{/if}
 
       <button
@@ -164,16 +121,6 @@
 </div>
 
 <style>
-  .chip-compania {
-    background: var(--color-superficie);
-    border: 1px solid var(--color-borde-input);
-    color: var(--color-texto-chip);
-  }
-  .chip-compania.activa {
-    background: var(--color-tinta);
-    border-color: var(--color-tinta);
-    color: var(--color-texto-invertido);
-  }
   input:focus-visible,
   button:focus-visible {
     outline: 2px solid var(--color-acento-alpha);
