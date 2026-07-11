@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { store } from './estado/store.svelte';
+  import Login from './Login.svelte';
   import Onboarding from './Onboarding.svelte';
   import Sidebar from './componentes/Sidebar.svelte';
   import CabeceraMovil from './componentes/CabeceraMovil.svelte';
@@ -31,6 +32,8 @@
   <div style="height:100vh; display:flex; align-items:center; justify-content:center; background:var(--color-fondo); color:var(--color-texto-tenue); font-size:14px;">
     Cargando cartera…
   </div>
+{:else if !store.sesion}
+  <Login />
 {:else if !store.perfil}
   <Onboarding />
 {:else}

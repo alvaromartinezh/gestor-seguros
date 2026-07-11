@@ -204,6 +204,22 @@
       </div>
     {/if}
   </section>
+
+  <section style="background:var(--color-superficie); border:1px solid var(--color-borde); border-radius:var(--radio-tarjeta); padding:20px; margin-bottom:24px;">
+    <h2 style="margin:0 0 4px; font-family:var(--fuente-titulares); font-size:19px; font-weight:400;">Cuenta</h2>
+    <p style="margin:0 0 14px; font-size:12.5px; color:var(--color-texto-tenue);">
+      Sesión iniciada como <strong>{store.sesion?.email}</strong>. Tu cartera se sincroniza con cualquier
+      dispositivo donde inicies sesión con este mismo correo.
+    </p>
+    <button
+      type="button"
+      onclick={() => store.cerrarSesion()}
+      class="boton-cerrar-sesion"
+      style="border:1px solid var(--color-vencido-borde-input); background:var(--color-superficie); color:var(--color-vencido); border-radius:var(--radio-pill); padding:10px 18px; font-size:13.5px; font-weight:600; cursor:pointer; min-height:var(--altura-tactil-min);"
+    >
+      Cerrar sesión
+    </button>
+  </section>
 </div>
 
 {#if mostrarSelectorCompanias}
@@ -243,7 +259,8 @@
   .boton-backup:hover {
     background: var(--color-hover-fila);
   }
-  .boton-quitar-foto:hover {
+  .boton-quitar-foto:hover,
+  .boton-cerrar-sesion:hover {
     background: var(--color-vencido-bg);
   }
   .chip-quitar {

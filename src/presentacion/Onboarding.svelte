@@ -27,7 +27,7 @@
     enviando = false;
     if (!resultado.ok) {
       errores = resultado.errores;
-      if (errores.nombre) paso = 2;
+      if (errores.nombre) paso = 1;
     }
   }
 </script>
@@ -46,22 +46,6 @@
       onclick={avanzar}
       onkeydown={(e) => e.key === 'Enter' && avanzar()}
       in:fade={{ duration: 500 }}
-      style="cursor:pointer; text-align:center; max-width:520px;"
-    >
-      <h1 style="margin:0; font-family:var(--fuente-titulares); font-weight:400; font-size:clamp(40px, 8vw, 68px); animation:fadeUp 0.7s ease;">
-        Bienvenido
-      </h1>
-      <p style="margin:22px 0 0; font-size:13px; color:var(--color-texto-tenue); letter-spacing:0.06em; text-transform:uppercase; animation:fadeIn 1.4s ease;">
-        Toca para continuar
-      </p>
-    </div>
-  {:else if paso === 1}
-    <div
-      role="button"
-      tabindex="0"
-      onclick={avanzar}
-      onkeydown={(e) => e.key === 'Enter' && avanzar()}
-      in:fade={{ duration: 500 }}
       style="cursor:pointer; text-align:center; max-width:560px;"
     >
       <h1 style="margin:0; font-family:var(--fuente-titulares); font-weight:400; font-size:clamp(30px, 6vw, 46px); line-height:1.25; animation:fadeUp 0.7s ease;">
@@ -71,7 +55,7 @@
         Toca para continuar
       </p>
     </div>
-  {:else if paso === 2}
+  {:else if paso === 1}
     <div in:fly={{ y: 16, duration: 450 }} style="text-align:center; width:100%; max-width:420px;">
       <h1 style="margin:0 0 26px; font-family:var(--fuente-titulares); font-weight:400; font-size:clamp(28px, 5vw, 40px);">
         ¿Cómo te llamas?
@@ -114,7 +98,7 @@
   {/if}
 
   <div style="display:flex; gap:6px; margin-top:44px;">
-    {#each [0, 1, 2, 3] as i (i)}
+    {#each [0, 1, 2] as i (i)}
       <span style="width:6px; height:6px; border-radius:50%; background:{i === paso ? 'var(--color-acento)' : '#e0d5c0'};"></span>
     {/each}
   </div>

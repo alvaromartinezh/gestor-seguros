@@ -2,8 +2,10 @@
 
 Aplicación de escritorio (Windows) y Android para gestionar una cartera de
 pólizas de seguros: clientes, vencimientos, avisos de renovación, calendario
-y copia de seguridad. Pensada para un agente/mediador de seguros; todos los
-datos se guardan **en el dispositivo**, no hay servidor ni cuenta en la nube.
+y copia de seguridad. Pensada para un agente/mediador de seguros. La cartera
+se guarda en la nube (Supabase) y se sincroniza automáticamente entre todos
+los dispositivos donde se inicie sesión con el mismo correo — login sin
+contraseña, por código de un solo uso.
 
 ## Arquitectura
 
@@ -12,10 +14,12 @@ src/
   dominio/          Entidades y reglas de negocio puras (sin I/O)
   aplicacion/        Casos de uso (ServicioPolizas, ServicioPerfil, ServicioBackup)
                       + puertos (interfaces) que definen lo que necesita cada caso de uso
-  infraestructura/    Adaptadores concretos de cada puerto: Electron, Capacitor y Web (dev)
+  infraestructura/    Adaptadores concretos de cada puerto: Electron, Capacitor y Web (dev),
+                      y nube/ (Supabase: autenticación + repositorios con caché local)
   presentacion/       UI en Svelte 5 (vistas, componentes, store)
 electron/             Proceso principal de Electron (ventana, bandeja, IPC, notificaciones)
 android/               Proyecto nativo generado por Capacitor
+supabase/              Esquema de base de datos versionado (migrations/) y config de Auth/SMTP
 tests/                 Tests de dominio y aplicación (Vitest)
 ```
 
@@ -166,8 +170,39 @@ móvil/ordenador de tu padre tiene una versión anterior instalada, esa
 primera actualización hay que dársela tú a mano una vez (como se hizo al
 principio); a partir de ahí ya tira sola.
 
+## Sincronización en la nube
+
+La cartera vive en Supabase (Postgres + Auth), proyecto `nxdyaoxclywqggwtjbux`
+(región eu-north-1). Cada fila está protegida por Row Level Security: solo el
+propio usuario (`auth.uid() = user_id`) puede leer o escribir sus datos — ver
+`supabase/migrations/0001_init.sql`.
+
+- **Login sin contraseña**: código de 6 dígitos por email
+  (`AutenticacionSupabase` + `presentacion/Login.svelte`). Se eligió código
+  en vez de enlace mágico para que el flujo sea idéntico en Windows y Android
+  sin tener que registrar un protocolo personalizado en el instalador.
+- **Email del código**: Supabase gratis no permite personalizar la plantilla
+  de email con el proveedor por defecto, así que el proyecto usa SMTP propio
+  (Resend, capa gratuita) — configurado en `supabase/config.toml`
+  (`[auth.email.smtp]`) y la plantilla en `supabase/templates/magic_link.html`.
+  La clave de Resend se pasa como variable de entorno `RESEND_API_KEY` al
+  ejecutar `supabase config push`, nunca se guarda en el repositorio.
+- **Caché local + modo sin conexión**: `RepositorioPolizasSupabase` y
+  `RepositorioPerfilSupabase` (en `infraestructura/nube/`) envuelven los
+  repositorios locales que ya existían como caché de lectura. Sin conexión,
+  la app sigue mostrando la última cartera cargada; guardar cambios sí exige
+  conexión (avisa con un toast si falla).
+- **Migración automática**: si un dispositivo ya tenía datos locales de antes
+  de este cambio y la nube está vacía, se suben una vez al iniciar sesión —
+  no hace falta hacer nada a mano.
+- **Cambiar de esquema**: nueva migración con
+  `npx supabase migration new <nombre>` + `npx supabase db push`. Cambios en
+  la plantilla de email o el SMTP: editar `supabase/config.toml` y
+  `RESEND_API_KEY=... npx supabase config push`.
+
 ## Copia de seguridad
 
 Desde **Perfil → Copia de seguridad** se puede exportar toda la cartera a un
-archivo, y restaurarla en otro dispositivo o tras una reinstalación.
+archivo, y restaurarla en otro dispositivo o tras una reinstalación — sigue
+siendo útil como respaldo adicional aparte de la sincronización en la nube.
 Recomendado hacerlo antes de actualizaciones grandes o de forma periódica.

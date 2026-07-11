@@ -45,7 +45,7 @@
         </span>
       </button>
     {/if}
-    <div style="font-size:10.5px; color:#aca287; padding:0 4px;">Datos guardados en este dispositivo</div>
+    <div style="font-size:10.5px; color:#aca287; padding:0 4px;">Sincronizado con tu cuenta</div>
   </div>
 </nav>
 

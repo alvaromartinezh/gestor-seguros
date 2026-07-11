@@ -23,8 +23,11 @@ import {
   type Poliza,
 } from '../../dominio';
 import type { EstadoActualizacion } from '../../aplicacion/puertos/ComprobadorActualizaciones';
+import type { Sesion } from '../../aplicacion/puertos/Autenticacion';
+import { estadoConexion } from '../../infraestructura/nube/estadoConexion';
 
 const INTERVALO_COMPROBAR_ACTUALIZACIONES_MS = 30 * 60 * 1000;
+const AVISO_SIN_CONEXION = 'Necesitas conexión a internet para guardar cambios.';
 
 export interface ItemNav {
   id: Vista;
@@ -58,6 +61,8 @@ class AppStore {
   plataforma: Plataforma = this.adaptadores.plataforma;
 
   listo = $state(false);
+  sesion = $state<Sesion | null>(null);
+  sinConexion = $state(false);
   polizas = $state<Poliza[]>([]);
   perfil = $state<Perfil | null>(null);
   hayDemo = $state(false);
@@ -134,6 +139,12 @@ class AppStore {
   }
 
   async inicializar(): Promise<void> {
+    this.sesion = await this.adaptadores.autenticacion.sesionActual();
+    this.listo = true;
+    if (this.sesion) await this.cargarDatosUsuario();
+  }
+
+  private async cargarDatosUsuario(): Promise<void> {
     const [polizas, perfil] = await Promise.all([
       this.servicioPolizas.inicializar({ conDemo: false }),
       this.servicioPerfil.inicializar(),
@@ -141,12 +152,24 @@ class AppStore {
     this.polizas = polizas;
     this.perfil = perfil;
     this.hayDemo = this.servicioPolizas.hayDatosDemo();
-    this.listo = true;
+    this.sinConexion = estadoConexion.sinConexion;
     await this.adaptadores.notificador.solicitarPermiso();
     await this.reprogramarNotificaciones();
 
     this.comprobarActualizaciones();
     setInterval(() => this.comprobarActualizaciones(), INTERVALO_COMPROBAR_ACTUALIZACIONES_MS);
+  }
+
+  async completarLogin(sesion: Sesion): Promise<void> {
+    this.sesion = sesion;
+    await this.cargarDatosUsuario();
+  }
+
+  async cerrarSesion(): Promise<void> {
+    await this.adaptadores.autenticacion.cerrarSesion();
+    this.sesion = null;
+    this.perfil = null;
+    this.polizas = [];
   }
 
   private async comprobarActualizaciones(): Promise<void> {
@@ -209,14 +232,24 @@ class AppStore {
     this.formPolizaId = null;
   }
 
+  private avisarSinConexion(): void {
+    this.sinConexion = true;
+    this.mostrarToast('Sin conexión', AVISO_SIN_CONEXION);
+  }
+
   async guardarPoliza(datos: DatosPoliza): Promise<ResultadoGuardar> {
-    const resultado = await this.servicioPolizas.guardarPoliza(datos);
-    if (resultado.ok) {
-      this.refrescarPolizas();
-      await this.reprogramarNotificaciones();
-      this.cerrarForm();
+    try {
+      const resultado = await this.servicioPolizas.guardarPoliza(datos);
+      if (resultado.ok) {
+        this.refrescarPolizas();
+        await this.reprogramarNotificaciones();
+        this.cerrarForm();
+      }
+      return resultado;
+    } catch {
+      this.avisarSinConexion();
+      return { ok: false, errores: {} };
     }
-    return resultado;
   }
 
   pedirBorrar(id: string): void {
@@ -229,33 +262,50 @@ class AppStore {
 
   async confirmarBorrado(): Promise<void> {
     if (!this.confirmarBorradoId) return;
-    await this.servicioPolizas.eliminarPoliza(this.confirmarBorradoId);
-    this.confirmarBorradoId = null;
-    this.refrescarPolizas();
-    await this.reprogramarNotificaciones();
+    try {
+      await this.servicioPolizas.eliminarPoliza(this.confirmarBorradoId);
+      this.confirmarBorradoId = null;
+      this.refrescarPolizas();
+      await this.reprogramarNotificaciones();
+    } catch {
+      this.avisarSinConexion();
+    }
   }
 
   async renovar(id: string): Promise<void> {
-    await this.servicioPolizas.renovarUnAnio(id);
-    this.refrescarPolizas();
-    await this.reprogramarNotificaciones();
+    try {
+      await this.servicioPolizas.renovarUnAnio(id);
+      this.refrescarPolizas();
+      await this.reprogramarNotificaciones();
+    } catch {
+      this.avisarSinConexion();
+    }
   }
 
   async quitarDemo(): Promise<void> {
-    await this.servicioPolizas.eliminarDatosDemo();
-    this.refrescarPolizas();
-    await this.reprogramarNotificaciones();
+    try {
+      await this.servicioPolizas.eliminarDatosDemo();
+      this.refrescarPolizas();
+      await this.reprogramarNotificaciones();
+    } catch {
+      this.avisarSinConexion();
+    }
   }
 
   // ── Perfil ──
 
   async guardarPerfil(datos: DatosPerfil): Promise<ResultadoGuardarPerfil> {
-    const resultado = await this.servicioPerfil.guardar(datos);
-    if (resultado.ok) {
-      this.perfil = resultado.perfil;
-      await this.reprogramarNotificaciones();
+    try {
+      const resultado = await this.servicioPerfil.guardar(datos);
+      if (resultado.ok) {
+        this.perfil = resultado.perfil;
+        await this.reprogramarNotificaciones();
+      }
+      return resultado;
+    } catch {
+      this.avisarSinConexion();
+      return { ok: false, errores: {} };
     }
-    return resultado;
   }
 
   // ── Copia de seguridad ──
@@ -265,13 +315,18 @@ class AppStore {
   }
 
   async importarBackup() {
-    const resultado = await this.servicioBackup.importar();
-    if (resultado.ok) {
-      this.refrescarPolizas();
-      this.perfil = this.servicioPerfil.existe() ? this.servicioPerfil.actual() : null;
-      await this.reprogramarNotificaciones();
+    try {
+      const resultado = await this.servicioBackup.importar();
+      if (resultado.ok) {
+        this.refrescarPolizas();
+        this.perfil = this.servicioPerfil.existe() ? this.servicioPerfil.actual() : null;
+        await this.reprogramarNotificaciones();
+      }
+      return resultado;
+    } catch {
+      this.avisarSinConexion();
+      return { ok: false as const, error: AVISO_SIN_CONEXION };
     }
-    return resultado;
   }
 
   // ── Toast ──
