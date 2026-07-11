@@ -1,6 +1,6 @@
 {
   "name": "gestor-seguros",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Gestor de cartera de seguros — app de escritorio y Android",
   "author": "Gestor de Seguros",
   "private": true,
