@@ -136,6 +136,36 @@ En Android, los avisos de renovación son notificaciones locales reales
 (programadas por el sistema operativo): funcionan aunque la app esté
 cerrada del todo.
 
+## Publicar una actualización
+
+El repositorio es <https://github.com/alvaromartinezh/gestor-seguros>. Cada
+push a `main` solo valida (tests + build) vía GitHub Actions, sin publicar
+nada — para que un commit a medias no le llegue a nadie. Publicar una
+versión real es un solo comando:
+
+```bash
+npm version patch          # o minor / major — sube package.json y crea el tag vX.Y.Z
+git push --follow-tags
+```
+
+Eso dispara un workflow que compila **el instalador de Windows y el APK de
+Android en los servidores de GitHub** (sin depender de esta máquina) y los
+publica en una Release de GitHub. A partir de ahí:
+
+- **Windows**: la app ya instalada la detecta sola (comprueba cada 6 h y al
+  abrir), la descarga en segundo plano y se instala al reiniciar — banner
+  "Hay una versión nueva" con botón "Actualizar y reiniciar".
+- **Android**: Android no deja autoactualizar apps fuera de la Play Store en
+  segundo plano, así que la app muestra el mismo banner con "Descargar
+  actualización", que abre el `.apk` de la Release en el navegador — el
+  usuario confirma la instalación con un par de toques, como la primera vez.
+
+**Importante**: la `v1.0.1` (la primera con esta comprobación de
+actualizaciones) es la primera versión capaz de auto-actualizarse. Si el
+móvil/ordenador de tu padre tiene una versión anterior instalada, esa
+primera actualización hay que dársela tú a mano una vez (como se hizo al
+principio); a partir de ahí ya tira sola.
+
 ## Copia de seguridad
 
 Desde **Perfil → Copia de seguridad** se puede exportar toda la cartera a un
