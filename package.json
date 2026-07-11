@@ -1,6 +1,6 @@
 {
   "name": "gestor-seguros",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Gestor de cartera de seguros — app de escritorio y Android",
   "author": "Gestor de Seguros",
   "private": true,
@@ -55,7 +55,11 @@
   "build": {
     "appId": "com.gestorseguros.app",
     "productName": "Gestor de Seguros",
-    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
     "directories": {
       "output": "release"
     },
@@ -63,7 +67,10 @@
       "provider": "github"
     },
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "build/icon.ico"
     },
     "nsis": {
