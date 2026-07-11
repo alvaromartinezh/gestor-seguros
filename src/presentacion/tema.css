@@ -1,0 +1,156 @@
+/*
+ * Design tokens — fuente única de verdad para colores, tipografía y radios.
+ * Extraídos literalmente de la plantilla visual del proyecto de diseño
+ * ("Gestor de Seguros.dc.html"). Ningún componente debe repetir estos
+ * valores como literales: siempre a través de estas variables.
+ */
+@import '@fontsource/figtree/400.css';
+@import '@fontsource/figtree/500.css';
+@import '@fontsource/figtree/600.css';
+@import '@fontsource/figtree/700.css';
+@import '@fontsource/instrument-serif/400.css';
+@import '@fontsource/instrument-serif/400-italic.css';
+
+:root {
+  /* Superficies */
+  --color-fondo: #f4efe7;
+  --color-superficie: #fdfbf7;
+  --color-superficie-sidebar: #efe9dd;
+  --color-superficie-chip: #f0ead9;
+  --color-borde: #e6ddcc;
+  --color-borde-sidebar: #e3dbc9;
+  --color-borde-input: #dcd2bd;
+  --color-borde-chip: #ded2b6;
+
+  /* Texto */
+  --color-texto: #2c2721;
+  --color-texto-invertido: #f7f3ea;
+  --color-texto-tenue: #9a8f7c;
+  --color-texto-tenue-2: #6b6252;
+  --color-texto-chip: #5c5340;
+
+  /* Marca / acento */
+  --color-acento: #8c6a4e;
+  --color-acento-hover: #6f5238;
+  --color-acento-alpha: #8c6a4e33;
+  --color-tinta: #2c2721;
+  --color-tinta-hover: #171310;
+  --color-badge: #a8681c;
+
+  /* Estados de póliza */
+  --color-vigente: #4a6b47;
+  --color-vigente-bg: #e9efe2;
+  --color-vigente-borde: #d3dfc6;
+  --color-proximo: #8a5f1d;
+  --color-proximo-bg: #f6ecd7;
+  --color-vencido: #9c4632;
+  --color-vencido-bg: #f6e8e2;
+  --color-vencido-borde-input: #e4cfc6;
+
+  /* Scroll / hover neutros */
+  --color-hover-fila: #f2ecdf;
+  --color-hover-fila-2: #f7f2e8;
+  --color-scrollbar: #d5cab5;
+  --color-demo-bg: #efe4cd;
+  --color-demo-borde: #e0d2b3;
+  --color-demo-texto: #6f5420;
+  --color-demo-boton: #6f5420;
+  --color-demo-boton-hover: #54400f;
+
+  /* Tipografía */
+  --fuente-titulares: 'Instrument Serif', Georgia, serif;
+  --fuente-texto: 'Figtree', 'Helvetica Neue', sans-serif;
+
+  /* Radios */
+  --radio-tarjeta: 16px;
+  --radio-tarjeta-lista: 14px;
+  --radio-input: 11px;
+  --radio-pill: 999px;
+  --radio-modal: 20px;
+
+  /* Layout */
+  --ancho-sidebar: 236px;
+  --altura-tactil-min: 44px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--color-fondo);
+  font-family: var(--fuente-texto);
+  color: var(--color-texto);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--color-acento);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--color-acento-hover);
+  text-decoration: underline;
+}
+
+input,
+select,
+textarea,
+button {
+  font-family: inherit;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--color-acento-alpha);
+  outline-offset: 0;
+  border-color: var(--color-acento) !important;
+}
+
+button {
+  cursor: pointer;
+}
+
+@keyframes pushIn {
+  from {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-scrollbar);
+  border-radius: 6px;
+  border: 2px solid var(--color-fondo);
+}

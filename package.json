@@ -1,0 +1,76 @@
+{
+  "name": "gestor-seguros",
+  "version": "1.0.0",
+  "description": "Gestor de cartera de seguros — app de escritorio y Android",
+  "author": "Gestor de Seguros",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "electron": "npm run build && electron .",
+    "electron:dev": "concurrently -k \"vite\" \"wait-on tcp:5173 && cross-env ELECTRON_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "dist:win": "npm run build && electron-builder --win",
+    "sync-version": "node scripts/sync-version.mjs",
+    "android:sync": "npm run sync-version && npm run build && npx cap sync android",
+    "android:build": "npm run android:sync && cd android && ./gradlew assembleRelease",
+    "android:build:debug": "npm run android:sync && cd android && ./gradlew assembleDebug"
+  },
+  "dependencies": {
+    "@fontsource/figtree": "^5.1.0",
+    "@fontsource/instrument-serif": "^5.1.0",
+    "electron-updater": "^6.3.9"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/share": "^7.0.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tsconfig/svelte": "^5.0.4",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "svelte": "^5.2.0",
+    "svelte-check": "^4.1.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8",
+    "wait-on": "^8.0.1"
+  },
+  "main": "electron/main.cjs",
+  "allowScripts": {
+    "electron@33.4.11": true,
+    "esbuild@0.25.12": true,
+    "esbuild@0.21.5": true
+  },
+  "build": {
+    "appId": "com.gestorseguros.app",
+    "productName": "Gestor de Seguros",
+    "files": ["dist/**/*", "electron/**/*", "package.json"],
+    "directories": {
+      "output": "release"
+    },
+    "publish": {
+      "provider": "github"
+    },
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}

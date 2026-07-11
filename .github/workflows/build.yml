@@ -1,0 +1,81 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+jobs:
+  # En cada push a main (que no sea un tag de versión): solo valida que todo
+  # sigue en orden, no publica nada.
+  comprobar:
+    if: github.ref_type != 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test
+      - run: npm run build
+
+  # Al empujar un tag vX.Y.Z (`npm version patch && git push --follow-tags`):
+  # se compilan y publican los instaladores en la Release de ese tag.
+  build-windows:
+    if: github.ref_type == 'tag'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-android:
+    if: github.ref_type == 'tag'
+    needs: build-windows # secuencial a propósito: evita que ambos jobs creen la Release a la vez
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm run sync-version
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Reconstruir el keystore de firma desde los secrets
+        working-directory: android
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > gestor-seguros-release.jks
+          cat > keystore.properties <<EOF
+          storeFile=gestor-seguros-release.jks
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          EOF
+      - name: Compilar APK de release
+        working-directory: android
+        run: ./gradlew assembleRelease --console=plain
+      - name: Publicar el APK en la Release de GitHub
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/app-release.apk
